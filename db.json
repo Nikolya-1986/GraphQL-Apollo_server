@@ -1,0 +1,27 @@
+[
+    { 
+        "id": 1, 
+        "name": "Angular", 
+        "description": "You must learn Angular" 
+    },
+    { 
+        "id": 2, 
+        "name": "Node.js", 
+        "description": "You must learn Node.js" 
+    },
+    { 
+        "id": 3, 
+        "name": "Rest Api", 
+        "description": "You must foget Rest Api" 
+    },
+    { 
+        "id": 4, 
+        "name": "GraphQL", 
+        "description": "You must learn GraphQL" 
+    },
+    { 
+        "id": 5, 
+        "name": "Apollo", 
+        "description": "You must learn Apollo" 
+    }
+]
