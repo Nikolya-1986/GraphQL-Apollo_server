@@ -3,7 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
-const { graphqlHTTP }= require('express-graphql');
+const { graphqlHTTP } = require('express-graphql');
 const {
     GraphQLObjectType,
     GraphQLString, 
@@ -16,16 +16,22 @@ const {
 const { PubSub } = require('graphql-subscriptions');
 const pubSub = new PubSub;
 
-const contents = fs.readFileSync("db.json");
-const Todos = JSON.parse(contents);
-  
+const content = fs.readFileSync("db.json");
+const Todos = JSON.parse(content);
+
 const TodoType = new GraphQLObjectType({
     name: 'Todo',
     description: 'This is a todo',
     fields: () => ({
-        id: { type: new GraphQLNonNull(GraphQLInt) },
-        name: { type: new GraphQLNonNull(GraphQLString) },
-        description: { type: new GraphQLNonNull(GraphQLString) },
+        id: { 
+            type: new GraphQLNonNull(GraphQLInt) 
+        },
+        name: { 
+            type: new GraphQLNonNull(GraphQLString) 
+        },
+        description: { 
+            type: new GraphQLNonNull(GraphQLString) 
+        },
     })
 });
   
@@ -101,6 +107,29 @@ const RootMutationType = new GraphQLObjectType({
                 return updateTodo;
             }
         },
+        updateTodo: {
+            type: TodoType,
+            description: 'Update a Todo',
+            args: {
+                id: {
+                    type: new GraphQLNonNull(GraphQLInt)
+                },
+                name: {
+                    type: new GraphQLNonNull(GraphQLString)
+                },
+                description: {
+                    type: new GraphQLNonNull(GraphQLString)
+                }
+            },
+            resolve: (root, args) => {
+                let updateTodo = Todos.find(todo => todo.id === args.id);
+
+                updateTodo.name = args.name;
+                updateTodo.description = args.description;
+
+                return updateTodo;
+            }
+        },
         deleteTodo: {
             type: TodoType,
             description: 'Delete a Todo',
@@ -114,11 +143,13 @@ const RootMutationType = new GraphQLObjectType({
                 if(todo){
                     Todos.splice(Todos.indexOf(todo), 1)
                     return todo
+                } else if(!todo) {
+                    throw new Error("Todo not found!!!");
                 }
             return null
             }
         },
-    })
+    }) 
 });
 
 const RootSubscriptionType = new GraphQLObjectType({
