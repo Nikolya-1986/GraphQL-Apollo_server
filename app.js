@@ -13,6 +13,8 @@ const {
     GraphQLList,
     GraphQLBoolean
 } = require('graphql');
+const { PubSub } = require('graphql-subscriptions');
+const pubSub = new PubSub;
 
 const contents = fs.readFileSync("db.json");
 const Todos = JSON.parse(contents);
@@ -40,12 +42,12 @@ const RootQueryType = new GraphQLObjectType({
             type: TodoType,
             description: 'Single Todo',
             args: {
-            id: {
-                type: new GraphQLNonNull(GraphQLInt)
-            },
+                id: {
+                    type: new GraphQLNonNull(GraphQLInt)
+                },
             },
             resolve: (root, args) => {
-            return Todos.find(todo => todo.id === args.id)
+                return Todos.find(todo => todo.id === args.id)
             }
         }
     })
@@ -67,13 +69,36 @@ const RootMutationType = new GraphQLObjectType({
                 },
             },
             resolve: (root, args) => {
-            const newTodo = {
-                id: Todos.length + 1,
-                name: args.name,
-                description: args.description,
+                const newTodo = {
+                    id: Todos.length + 1,
+                    name: args.name,
+                    description: args.description,
+                }
+                Todos.push(newTodo)
+                return newTodo
             }
-            Todos.push(newTodo)
-            return newTodo
+        },
+        updateTodo: {
+            type: TodoType,
+            description: 'Update a Todo',
+            args: {
+                id: {
+                    type: new GraphQLNonNull(GraphQLInt)
+                },
+                name: {
+                    type: new GraphQLNonNull(GraphQLString)
+                },
+                description: {
+                    type: new GraphQLNonNull(GraphQLString)
+                }
+            },
+            resolve: (root, args) => {
+                let updateTodo = Todos.find(todo => todo.id === args.id);
+
+                updateTodo.name = args.name;
+                updateTodo.description = args.description;
+
+                return updateTodo;
             }
         },
         deleteTodo: {
@@ -95,10 +120,33 @@ const RootMutationType = new GraphQLObjectType({
         },
     })
 });
+
+const RootSubscriptionType = new GraphQLObjectType({
+    name: 'Subscription',
+    description: 'Root Subscription',
+    fields: () => ({
+        type: new GraphQLList(TodoType),
+        description: 'Todos Subscription',
+        
+        toto_added: {
+            type: new GraphQLNonNull(TodoType),
+            subscribe: (parent, args, { pubsub }) => pubsub.asyncIterator("NEW_TODO"),
+        },
+        toto_updated: {
+            type: new GraphQLNonNull(TodoType),
+            subscribe: (parent, args, { pubsub }) => pubsub.asyncIterator("UPDATED_TODO"),
+        },
+        todo_deleted: {
+            type: new GraphQLNonNull(TodoType),
+            subscribe: (parent, args, { pubsub }) => pubsub.asyncIterator("DELETED_TODO"),
+        }
+    })
+})
   
 const schema = new GraphQLSchema({
     query: RootQueryType,
-    mutation: RootMutationType
+    mutation: RootMutationType,
+    subscription: RootSubscriptionType
 });
   
 const app = express();
@@ -113,4 +161,3 @@ app.use('/graphql', graphqlHTTP({
 app.listen(app.get('port'), () => {
     console.log(`Web app avalible at http://127.0.0.1:${app.get('port')}`);
 });
-//https://signoz.io/blog/angular-graphql/
